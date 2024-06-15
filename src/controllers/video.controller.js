@@ -15,12 +15,13 @@ const videoUpload = asyncHandler(async (req, res) => {
 
     const { title, description, isPublished } = req.body
 
+    console.log(req.body)
+
     if (
         [title, description, isPublished].some((field) => field?.trim() === "")
     ) {
         throw new ApiError(400, "All fields are required")
     }
-    console.log()
 
     let videoLocalPath;
     if (req.files && req.files.videoFile && req.files.videoFile.length > 0) {
@@ -129,7 +130,7 @@ const exploreVideos = asyncHandler(async (req, res) => {
         videoDetails.creator = (await User.findById(videoDetails.owner)).username
     )
 
-    
+
 
     return await res
         .status(200)

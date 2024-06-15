@@ -151,6 +151,7 @@ const loginUser = asyncHandler(async (req, res) => {
         .status(200)
         .cookie("accessToken", accessToken, options)
         .cookie("refreshToken", refreshToken, options)
+        // .setHeader("Authorizarion", `Bearer ${accessToken}`)
         .json(
             new ApiResponse(
                 200,
@@ -410,6 +411,14 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
             }
         },
         {
+            $lookup: {
+                from: "videos",
+                localField: "_id",
+                foreignField: "owner",
+                as: "videos"
+            }
+        },
+        {
             $addFields: {
                 subscribersCount: {
                     $size: "$subscribers"
@@ -433,6 +442,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
                 subscribersCount: 1,
                 channelsSubscribedToCount: 1,
                 isSubscribed: 1,
+                videos: 1,
                 avatar: 1,
                 coverImage: 1,
                 email: 1,
