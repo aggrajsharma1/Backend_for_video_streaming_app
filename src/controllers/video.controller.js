@@ -124,13 +124,47 @@ const exploreVideos = asyncHandler(async (req, res) => {
         throw new ApiError(400, "invalid request")
     }
 
-    const videos = await Video.find()
+    // const videos = await Video.find()
 
-    videos.map(async (videoDetails) =>
-        videoDetails.creator = (await User.findById(videoDetails.owner)).username
-    )
+    // const newArr = videos.map(async (videoDetails) => {
+    //     videoDetails.title = (await User.findById(videoDetails.owner)).username
+    //     console.log((await User.findById(videoDetails.owner)).avatar)
+    //     console.log(videoDetails.title)
+    // })
 
+    const videos = await Video.aggregate([
+        {
+            $match: {}
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "ownerDetails",
+                pipeline: [
+                    {
+                        // $addFields: {}
+                        $project: {
+                            _id: 0,
+                            username: 1,
+                            fullName: 1,
+                            avatar: 1
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            $addFields: {
+                ownerDetails: {
+                    $first: "$ownerDetails"
+                }
+            }
+        }
+    ])
 
+    // console.log(videos)
 
     return await res
         .status(200)

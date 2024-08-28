@@ -237,11 +237,13 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 })
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
+
+    console.log(req.body)
     const { oldPassword, newPassword } = req.body
 
     const user = await User.findById(req.user?._id)
 
-    const isPasswordCorrect = user.isPasswordCorrect(oldPassword)
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
 
     if (!isPasswordCorrect) {
         throw new ApiError(400, "Invalid Old Password")
@@ -268,24 +270,69 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
 const changeAccountDetails = asyncHandler(async (req, res) => {
 
+    console.log(req.body)
+
     const { fullName, email } = req.body
 
-    if (!(fullName && email)) {
-        throw new ApiError(400, "Full Name and Email are required")
+    if (!(fullName || email)) {
+        throw new ApiError(400, "Full Name or Email is required")
     }
 
-    const user = User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set: {
-                fullName,
-                email
+    let user;
+
+    if (!fullName) {
+        user = await User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $set: {
+                    email
+                }
+            },
+            {
+                new: true
             }
-        },
-        {
-            new: true
-        }
-    ).select("-password")
+        ).select("-password")
+    }
+    else if (!email) {
+        user = await User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $set: {
+                    fullName
+                }
+            },
+            {
+                new: true
+            }
+        ).select("-password")
+    }
+    else {
+        user = await User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $set: {
+                    fullName,
+                    email
+                }
+            },
+            {
+                new: true
+            }
+        ).select("-password")
+    }
+
+    // user = await User.findByIdAndUpdate(
+    //     req.user?._id,
+    //     {
+    //         $set: {
+    //             fullName,
+    //             email
+    //         }
+    //     },
+    //     {
+    //         new: true
+    //     }
+    // ).select("-password")
 
     return res
         .status(200)
@@ -488,7 +535,7 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
                             from: "users",
                             localField: "owner",
                             foreignField: "_id",
-                            as: "owner",
+                            as: "ownerDetails",
                             pipeline: [
                                 {
                                     $project: {
@@ -502,8 +549,8 @@ const getUserWatchHistory = asyncHandler(async (req, res) => {
                     },
                     {
                         $addFields: {
-                            owner: {
-                                $first: "$owner"
+                            ownerDetails: {
+                                $first: "$ownerDetails"
                             }
                         }
                     }
